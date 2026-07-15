@@ -177,6 +177,7 @@ export function DiffPane({
   diffContentWidth,
   expandedGapsByFileId = EMPTY_EXPANDED_GAPS_BY_FILE_ID,
   files,
+  estimatedViewportRows = 1,
   headerLabelWidth,
   headerStatsWidth,
   layout,
@@ -224,6 +225,8 @@ export function DiffPane({
   diffContentWidth: number;
   expandedGapsByFileId?: Record<string, ReadonlySet<string>>;
   files: DiffFile[];
+  /** Initial row budget used before OpenTUI reports the measured scroll viewport. */
+  estimatedViewportRows?: number;
   headerLabelWidth: number;
   headerStatsWidth: number;
   layout: Exclude<LayoutMode, "auto">;
@@ -477,7 +480,11 @@ export function DiffPane({
   // Keep the full file-section path for wrapped lines, where exact wrapped heights depend on
   // mounting each section; nowrap reviews can window offscreen files behind exact spacers.
   const windowingEnabled = !wrapLines;
-  const [scrollViewport, setScrollViewport] = useState({ top: 0, height: 0 });
+  const [scrollViewport, setScrollViewport] = useState({
+    top: 0,
+    // Keep first paint windowed even if the terminal has not reported a usable height yet.
+    height: Math.max(1, estimatedViewportRows),
+  });
   const [rapidScrollOverscanRows, setRapidScrollOverscanRows] = useState(0);
   const [hoveredFileId, setHoveredFileId] = useState<string | null>(null);
   const [copySelectionDrag, setCopySelectionDrag] = useState<CopySelectionDrag | null>(null);
@@ -572,6 +579,12 @@ export function DiffPane({
     const readViewport = () => {
       const nextTop = scrollBox.scrollTop ?? 0;
       const nextHeight = scrollBox.viewport.height ?? 0;
+
+      // Keep the estimated startup window until OpenTUI has measured a real viewport. Replacing a
+      // positive estimate with zero would temporarily disable row windowing and mount every row.
+      if (nextHeight <= 0) {
+        return;
+      }
 
       // The first viewport read is a baseline snapshot, not scroll input. The scroll box may retain
       // a non-zero top across remounts, so do not treat that retained position as a rapid burst.

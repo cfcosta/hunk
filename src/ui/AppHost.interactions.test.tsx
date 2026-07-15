@@ -2338,14 +2338,14 @@ describe("App interactions", () => {
         await setup.mockInput.pressKey("g", { shift: true });
       });
       await flush(setup);
-      frame = setup.captureCharFrame();
+      frame = await waitForFrame(setup, (nextFrame) => nextFrame.includes("line120 = 1120"));
       expect(frame).toContain("line120 = 1120");
 
       await act(async () => {
         await setup.mockInput.pressKey("g");
       });
       await flush(setup);
-      frame = setup.captureCharFrame();
+      frame = await waitForFrame(setup, (nextFrame) => nextFrame.includes("line01 = 1001"));
       expect(frame).toContain("line01 = 1001");
     } finally {
       await act(async () => {
@@ -2401,14 +2401,14 @@ describe("App interactions", () => {
         await setup.mockInput.pressKey("g", { shift: true });
       });
       await flush(setup);
-      frame = setup.captureCharFrame();
+      frame = await waitForFrame(setup, (nextFrame) => nextFrame.includes("line120 = 1120"));
       expect(frame).toContain("line120 = 1120");
 
       await act(async () => {
         await setup.mockInput.pressKey("g");
       });
       await flush(setup);
-      frame = setup.captureCharFrame();
+      frame = await waitForFrame(setup, (nextFrame) => nextFrame.includes("line01 = 1001"));
       expect(frame).toContain("line01 = 1001");
     } finally {
       await act(async () => {

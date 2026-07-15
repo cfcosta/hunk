@@ -15,6 +15,7 @@ import { RAPID_SCROLL_OVERSCAN_IDLE_MS } from "../lib/adaptiveScrollOverscan";
 import { resolveTheme } from "../themes";
 import { measureDiffSectionGeometry } from "../diff/diffSectionGeometry";
 import { buildFileSectionLayouts, buildInStreamFileHeaderHeights } from "../lib/fileSectionLayout";
+import { reviewRowId } from "../lib/ids";
 
 const { AppHost } = await import("../AppHost");
 const { buildSidebarEntries } = await import("../lib/files");
@@ -502,6 +503,44 @@ describe("UI components", () => {
     expect(frame).toContain("@@ -1,1 +1,1 @@");
     expect(frame).not.toContain("[AI]");
     expect(frame.indexOf("alpha.ts")).toBeLessThan(frame.indexOf("beta.ts"));
+  });
+
+  test("DiffPane windows a large file before OpenTUI measures the viewport", async () => {
+    const theme = resolveTheme("github-dark-default", null);
+    const file = createTallDiffFile("startup-window", "startup-window.ts", 500);
+    const scrollRef = createRef<ScrollBoxRenderable>();
+    const plannedRows = measureDiffSectionGeometry(
+      file,
+      "split",
+      true,
+      theme,
+      [],
+      72,
+      true,
+      false,
+    ).plannedRows;
+    const setup = await testRender(
+      <DiffPane
+        {...createDiffPaneProps([file], theme, {
+          estimatedViewportRows: 6,
+          scrollRef,
+        })}
+      />,
+      { width: 80, height: 12 },
+    );
+
+    try {
+      const content = scrollRef.current?.content;
+      const firstRowId = reviewRowId(plannedRows[0]!.key);
+      const distantRowId = reviewRowId(plannedRows[100]!.key);
+
+      expect(Boolean(content?.findDescendantById(firstRowId))).toBe(true);
+      expect(Boolean(content?.findDescendantById(distantRowId))).toBe(false);
+    } finally {
+      await act(async () => {
+        setup.renderer.destroy();
+      });
+    }
   });
 
   test("DiffFileHeaderRow leaves one column after line counts", async () => {

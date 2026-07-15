@@ -1103,6 +1103,7 @@ export function App({
           diffContentWidth={diffContentWidth}
           expandedGapsByFileId={review.expandedGapsByFileId}
           files={filteredFiles}
+          estimatedViewportRows={terminal.height}
           pagerMode={pagerMode}
           screenLeft={diffPaneScreenLeft}
           screenTop={diffPaneScreenTop}
