@@ -81,6 +81,7 @@
     "bench:render-layout": "bun run benchmarks/render-layout.ts",
     "bench:highlight-prefetch": "bun run benchmarks/highlight-prefetch.ts",
     "bench:large-stream": "bun run benchmarks/large-stream.ts",
+    "bench:single-file-startup": "bun run benchmarks/single-file-startup.ts",
     "bench:interaction-latency": "bun run benchmarks/interaction-latency.ts",
     "bench:non-ascii-stream": "bun run benchmarks/non-ascii-stream.ts",
     "bench:huge-stream": "bun run benchmarks/huge-stream.ts",

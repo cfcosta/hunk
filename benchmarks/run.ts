@@ -11,6 +11,7 @@ const defaultScripts = [
   "render-layout.ts",
   "highlight-prefetch.ts",
   "large-stream.ts",
+  "single-file-startup.ts",
   "interaction-latency.ts",
   "non-ascii-stream.ts",
 ];

@@ -23,10 +23,10 @@ const SELECTED_HIGHLIGHT_MARKER = "stream1_40";
 
 type BenchmarkRenderer = Awaited<ReturnType<typeof testRender>>;
 
-async function createBenchmarkRenderer() {
+async function createBenchmarkRenderer(bootstrap = createLargeSplitStreamBootstrap()) {
   const setup = await testRender(
     React.createElement(AppHost, {
-      bootstrap: createLargeSplitStreamBootstrap(),
+      bootstrap,
     }),
     VIEWPORT,
   );
@@ -81,13 +81,20 @@ async function destroyRenderer(setup: BenchmarkRenderer) {
   setup.renderer.destroy();
 }
 
-async function measureFirstFrameMs() {
-  const setup = await createBenchmarkRenderer();
-  const start = performance.now();
+/** Measure both the complete initial presentation and the legacy post-mount frame. */
+async function measureInitialPresentation() {
+  // Fixture construction models already-loaded application data and stays outside the render timer.
+  const bootstrap = createLargeSplitStreamBootstrap();
+  const presentationStart = performance.now();
+  const setup = await createBenchmarkRenderer(bootstrap);
+  const frameStart = performance.now();
 
   try {
     await renderPass(setup);
-    return performance.now() - start;
+    return {
+      initialPresentationMs: performance.now() - presentationStart,
+      postMountFrameMs: performance.now() - frameStart,
+    };
   } finally {
     await flushSelectedHighlight(setup);
     await destroyRenderer(setup);
@@ -114,12 +121,20 @@ async function measureScrollTicksMs() {
   }
 }
 
-const coldFirstFrameMs = await measureFirstFrameMs();
-const warmFirstFrameMs = await measureFirstFrameMs();
+const coldPresentation = await measureInitialPresentation();
+const warmPresentation = await measureInitialPresentation();
 const windowedScrollMs = await measureScrollTicksMs();
 
-console.log(`METRIC cold_first_frame_ms=${coldFirstFrameMs.toFixed(2)}`);
-console.log(`METRIC warm_first_frame_ms=${warmFirstFrameMs.toFixed(2)}`);
+console.log(
+  `METRIC cold_initial_presentation_ms=${coldPresentation.initialPresentationMs.toFixed(2)}`,
+);
+console.log(
+  `METRIC warm_initial_presentation_ms=${warmPresentation.initialPresentationMs.toFixed(2)}`,
+);
+// Preserve the historical metrics for release-baseline continuity. These measure only the first
+// explicit frame after testRender has already paid the synchronous initial-mount cost.
+console.log(`METRIC cold_first_frame_ms=${coldPresentation.postMountFrameMs.toFixed(2)}`);
+console.log(`METRIC warm_first_frame_ms=${warmPresentation.postMountFrameMs.toFixed(2)}`);
 console.log(`METRIC windowed_scroll_ticks_ms=${windowedScrollMs.toFixed(2)}`);
 console.log(`METRIC scroll_ticks=${SCROLL_TICKS}`);
 console.log(`METRIC files=${DEFAULT_FILE_COUNT}`);

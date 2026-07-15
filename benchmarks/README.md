@@ -38,6 +38,7 @@ bun run bench:changeset-parse
 bun run bench:render-layout
 bun run bench:highlight-prefetch
 bun run bench:large-stream
+bun run bench:single-file-startup
 bun run bench:interaction-latency
 bun run bench:non-ascii-stream
 bun run bench:huge-stream
@@ -56,7 +57,8 @@ bun run bench:competitors
 - `changeset-parse.ts` — measures patch normalization, Pierre parsing, patch chunking, and normalized `DiffFile` construction for many-small-files, balanced, and large-single-file patches.
 - `render-layout.ts` — measures pure split/stack row building, section geometry, and review-plan construction for many-small-files, balanced, and large-single-file streams.
 - `highlight-prefetch.ts` — measures selected-file highlight startup and adjacent prefetch readiness.
-- `large-stream.ts` — measures large split-stream first-frame and scroll cost.
+- `large-stream.ts` — measures large split-stream initial presentation, post-mount first-frame, and scroll cost.
+- `single-file-startup.ts` — measures complete initial presentation for one ~12k-row split diff, with syntax highlighting disabled to isolate synchronous React/OpenTUI mount cost.
 - `interaction-latency.ts` — measures per-press `]` hunk-navigation latency and per-scroll-tick latency (median + p95) on the large stream, plus RSS/heap ceilings after first frame and after navigation (the default-suite slice of `memory.ts`).
 - `non-ascii-stream.ts` — measures first-frame and per-scroll-tick latency on a stream whose diff content embeds CJK, emoji, and box-drawing characters, exercising the string-width path on content rather than chrome glyphs.
 - `huge-stream.ts` — opt-in huge tier (`--include-huge` or `HUNK_BENCH_INCLUDE_HUGE=1`): cold first frame, scroll-tick and hunk-navigation latency, and memory ceilings on ~1k files / 300k+ diff lines plus one giant ~50k-line file.
@@ -98,7 +100,7 @@ Each script prints `METRIC name=value` lines. `benchmarks/run.ts` repeats script
 
 - These benchmarks are intentionally local-only for now. They are useful diagnostics, but CI proved too noisy and slow for PR gating.
 - The default local suite excludes optional memory profiling, resize profiling, pure-planning profiling, the huge fixture tier, and competitor comparisons. Run those focused scripts when deeper diagnostics are needed.
-- Fixture tiers: the moderate tier (180 files × 120 lines) backs `large-stream.ts` and `interaction-latency.ts`; the huge tier (1,000 files × 300 lines + one 50,000-line file) backs `huge-stream.ts` and is opt-in because one sample can take minutes before hot-path fixes land.
+- Fixture tiers: the moderate tier (180 files × 120 lines) backs `large-stream.ts` and `interaction-latency.ts`; `single-file-startup.ts` covers the distinct one-file/~12k-rendered-row startup shape; the huge tier (1,000 files × 300 lines + one 50,000-line file) backs `huge-stream.ts` and is opt-in because one sample can take minutes before hot-path fixes land.
 - Competitor comparisons are informational because installed tool versions and feature parity vary by environment.
 - Use `--samples 5` locally when validating borderline changes.
 - Use `benchmarks/results/` for local benchmark output; result files in that directory are ignored by default.
